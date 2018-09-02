@@ -4,9 +4,13 @@ pragma solidity ^0.4.24;
 contract Token {
     
     /** @dev Property of all tokens */
-    string public constant name = "ChinpinTokens";
-    string public constant symbol = "CPT";
+    string public constant name = "Token";
+    string public constant symbol = "TOK";
+    address eventContract;
+    uint256 eventID;
+    string eventDescription;
     uint256 totalSupply;
+    bool minted;
     
     /** @dev Mapping maps a user's address to the user's balance */
     mapping (address => uint256) public balanceOf;  
@@ -21,9 +25,14 @@ contract Token {
     /** @dev This function is made to mint numTokens number of tokens with a specified name and symbol.
       * @param _numTokens  Number of tokens to mint
       */
-    function mintTokens (uint256 _numTokens) public {
-        totalSupply = _numTokens;                    
-        balanceOf[msg.sender] = totalSupply;           
+    function mintTokens (uint256 _numTokens, uint256 _eventID, string _eventDescription) public {
+        require(minted == false);
+        totalSupply = _numTokens;  
+        eventContract = msg.sender;
+        eventID = _eventID;
+        eventDescription = _eventDescription;
+        minted = true;
+        balanceOf[msg.sender] = totalSupply;    
         emit Transfer(msg.sender, msg.sender, _numTokens);
     }
     
@@ -33,10 +42,10 @@ contract Token {
       * @param _numTokens  Number of tokens to transfer
       */
     function _transfer (address _sender, address _recipient, uint256 _numTokens) private returns (bool success) {
-        require(_recipient != 0x0);                        //Don't send to 0x0
-        require(balanceOf[_sender] >= _numTokens);         //Need sender to have enough tokens
-        balanceOf[_sender] -= _numTokens;                  //Subtract balance of sender
-        balanceOf[_recipient] += _numTokens;               //Add balance to recipient
+        require(_recipient != 0x0);                       
+        require(balanceOf[_sender] >= _numTokens);         
+        balanceOf[_sender] -= _numTokens;                 
+        balanceOf[_recipient] += _numTokens;               
         emit Transfer(_sender, _recipient, _numTokens);
         return true;
     }
@@ -86,6 +95,10 @@ contract Token {
       */
     function allowance (address _owner, address _spender) public view returns (uint256 numTokens) {
         return allowance[_owner][_spender];
+    }
+    
+    function tokenInfo() public view returns (uint256 _totalSupply, uint256 _eventID, string _eventDescription, address _eventContract) {
+        return (totalSupply, eventID, eventDescription, eventContract);
     }
 }
 
