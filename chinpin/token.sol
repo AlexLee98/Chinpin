@@ -1,33 +1,37 @@
 pragma solidity ^0.4.24;
 
+/** @title Token contract */
 contract Token {
     
-    //Public variables for all tokens
-    uint256 value;
+    /** @dev Property of all tokens */
+    string public constant name = "ChinpinTokens";
+    string public constant symbol = "CPT";
     uint256 totalSupply;
-    string public name;
-    string public symbol;
     
-    //Balance of each account 
+    /** @dev Mapping maps a user's address to the user's balance */
     mapping (address => uint256) public balanceOf;  
     mapping (address => mapping (address => uint256)) public allowance;
     
-    //Notify for successful transfer of tokens
+    /** @dev Event for notifying the user whenever tokens are transfered */
     event Transfer (address indexed _sender, address indexed _recipient, uint256 _numTokens);
     
-    //Notify user of approval 
+    /** @dev Event for notifying the user whenever token withdrawing is allowed */
     event Approval (address indexed _owner, address indexed _spender, uint256 _numTokens);
     
-    //Mint n number of tokens with specified name and symbol
-    function mintTokens (uint256 numTokens, string tokenName, string tokenSymbol) public {
-        totalSupply = numTokens;                    
-        name = tokenName;                           
-        symbol = tokenSymbol;
-        balanceOf[msg.sender] = totalSupply;        //Give creator all tokens    
-        value = 1;                                  //Initial value is 1:1 (1 token for 1 usd)
+    /** @dev This function is made to mint numTokens number of tokens with a specified name and symbol.
+      * @param _numTokens  Number of tokens to mint
+      */
+    function mintTokens (uint256 _numTokens) public {
+        totalSupply = _numTokens;                    
+        balanceOf[msg.sender] = totalSupply;           
+        emit Transfer(msg.sender, msg.sender, _numTokens);
     }
     
-    // Transfer n tokens from sender to recipient
+    /** @dev This function is made to transfer numTokens tokens from a specified sender to a recipient.
+      * @param _sender     The address of the sender
+      * @param _recipient  The address of the recipient
+      * @param _numTokens  Number of tokens to transfer
+      */
     function _transfer (address _sender, address _recipient, uint256 _numTokens) private returns (bool success) {
         require(_recipient != 0x0);                        //Don't send to 0x0
         require(balanceOf[_sender] >= _numTokens);         //Need sender to have enough tokens
@@ -37,40 +41,51 @@ contract Token {
         return true;
     }
     
-    //Return balance of tokenOwner
-    function balanceOf(address tokenOwner) public constant returns (uint balance) {
-        return balanceOf[tokenOwner];
-    }
-    
-    //Transfer n tokens from minter to recipient
+    /** @dev This function transfers tokens from the user calling it to a specified recipient.
+      * @param _recipient  Who to transfer tokens to.
+      * @param _numTokens  Number of tokens to transfer.
+      */
     function transfer (address _recipient, uint256 _numTokens) public {
         _transfer(msg.sender, _recipient, _numTokens);
     }
     
-    //Transfer n tokens from sender to recipient
+     /** @dev This function transfers tokens from a specified user to a recipient.
+      * @param _sender     Who to transfer tokens from.
+      * @param _recipient  Who to transfer tokens to.
+      * @param _numTokens  Number of tokens to transfer.
+      */
     function transferFrom (address _sender, address _recipient, uint256 _numTokens) public {
         _transfer(_sender, _recipient, _numTokens);
     } 
     
-    //Return number of tokens in circulation
+    /** @dev This function returns the balance of a token owner.
+    * @param _tokenOwner  The address of the tokenOwner.
+    */
+    function balanceOf(address _tokenOwner) public view returns (uint balance) {
+        return balanceOf[_tokenOwner];
+    }
+    
+    /** @dev Returns the amount of tokens in circulation */
     function getNumTokens () public constant returns (uint256 numTokens) {
         return totalSupply;
     }
     
-    //Allow spender to spend up to "_numTokens" amount of tokens
+    /** @dev This function allows a user to spend numTokens amount of tokens.
+      * @param _spender    Address of who you allow to spend tokens
+      * @param _numTokens  Number of tokens to allow user to spend
+      */
     function approve (address _spender, uint256 _numTokens) public returns (bool success) {
         allowance[msg.sender][_spender] = _numTokens;
         emit Approval(msg.sender, _spender, _numTokens);
         return true;
     }
     
-    //Returns number of tokens that owner allows spender to spend
+    /** @dev This function returns the amount of allowance that a spender has.
+      * @param _owner    Address of the owner
+      * @param _spender  Address of the spender
+      */
     function allowance (address _owner, address _spender) public view returns (uint256 numTokens) {
         return allowance[_owner][_spender];
     }
-    
-    //Change value of token
-    function changeValue (uint256 _value) public {
-        value = _value;
-    }
 }
+
