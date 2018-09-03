@@ -1,3 +1,6 @@
+// Done by Alexander J. Lee
+// aljilee@ucsc.edu
+
 pragma solidity ^0.4.24;
 
 /** @title Token contract */

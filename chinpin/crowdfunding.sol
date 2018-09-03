@@ -1,3 +1,6 @@
+// Done by Alexander J. Lee
+// aljilee@ucsc.edu
+
 pragma solidity ^0.4.24;
 
   /** @dev Import functions from the token contract. */
@@ -243,6 +246,7 @@ contract Crowdsale {
     function withdrawAssetTokens(uint256 _eventID) public {
         uint256 _numTokens;
         
+        require(eventMap[_eventID].distributeTokens);
         require(investorMap[_eventID][msg.sender][0].amountContributed > 0);
         require(investorMap[_eventID][msg.sender][0].recieveToken == false);
         for (uint256 i = 0; i < investorMap[_eventID][msg.sender].length; i++) {
