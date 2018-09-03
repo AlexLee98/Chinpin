@@ -35,8 +35,9 @@ contract Crowdsale {
       * @param eventLive          Tells us whether the event is currently live
       * @param eventDuration      How much longer an event will last
       * @param continueAfterGoal  If an event will continue to accept investments if it                                   exceeds the goal 
-      * @param distributeTokens   Tells us whether the event has distributed asset tokens
-      * @param refundEther        Tells us whether the event has refunded ether
+      * @param mintTokens         Tells us whether we have minted tokens for the event
+      * @param distributeTokens   Tells us whether the event will distribute asset tokens
+      * @param refundEther        Tells us whether the event will refund ether
       */
     struct Event {
         address creator;
@@ -55,6 +56,7 @@ contract Crowdsale {
         bool eventLive;
         bool fundingGoalReached;
         bool continueAfterGoal;
+        bool mintTokens;
         bool distributeTokens;
         bool refundEther;
     }
@@ -129,6 +131,7 @@ contract Crowdsale {
         if (eventMap[_eventID].amountRaised >= eventMap[_eventID].fundingGoal) {
             eventMap[_eventID].fundingGoalReached = true;
             eventMap[_eventID].distributeTokens = true;
+            eventMap[_eventID].mintTokens = true;
         } else {
             eventMap[_eventID].refundEther = true;
         }
@@ -144,13 +147,13 @@ contract Crowdsale {
       }
       
     /** @dev This function is for returning basic event information. */
-    function eventData(uint256 _eventID) public view returns (string _description, uint256 numEvents, address eventCreator, bool _continueAfterGoal, uint256 _eventStart, uint256 _eventEnd) {
-        return (eventMap[_eventID].description, eventID, eventMap[_eventID].creator, eventMap[_eventID].continueAfterGoal, eventMap[_eventID].eventStart, eventMap[_eventID].eventEnd);
+    function eventData(uint256 _eventID) public view returns (uint256 numEvents, address eventCreator, string _eventDescription, uint256 _eventStart, uint256 _eventEnd, uint256 _currentTime, bool _continueAfterReachingGoal) {
+        return (eventID, eventMap[_eventID].creator, eventMap[_eventID].description,   eventMap[_eventID].eventStart, eventMap[_eventID].eventEnd, now, eventMap[_eventID].continueAfterGoal);
     }
     
     /** This function is for returning event information pertaining to investments. */
-    function eventInvestmentData(uint256 _eventID) public view returns (uint256 _currentTime, bool _eventLive, uint256 _amountRaised, uint256 _fundingGoal, uint256 _numInvestors) {
-        return (now, eventMap[_eventID].eventLive, eventMap[_eventID].amountRaised, eventMap[_eventID].fundingGoal, eventMap[_eventID].storeKeys.length);
+    function eventInvestmentData(uint256 _eventID) public view returns (bool _eventLive, uint256 _eventEnd, uint256 _amountRaised, uint256 _fundingGoal, uint256 _numInvestors, bool _refundEther, bool _withdrawAssetTokens) {
+        return (eventMap[_eventID].eventLive, eventMap[_eventID].eventEnd,  eventMap[_eventID].amountRaised, eventMap[_eventID].fundingGoal, eventMap[_eventID].storeKeys.length, eventMap[_eventID].refundEther, eventMap[_eventID].distributeTokens);
     }
     
     /** @dev This function is for mapping an investor's data to the correct event and mapping their key to their InvestorData array. The function is called whenever someone invests.
@@ -196,18 +199,18 @@ contract Crowdsale {
     
     /** Display an investor's data (singular investment) for a particular event */
     function investorData (uint256 _eventID, uint256 numInvestor, uint256 numInvestment) public view returns (address _investorKey, uint256 totalContributed, uint256 _investorContribution, uint256 _timeOfContribution) {
-        address _investor = eventMap[_eventID].storeKeys[numInvestor];
+        address _investor = eventMap[_eventID].storeKeys[numInvestor - 1];
         uint256 _totalContributed;
         for (uint256 i = 0; i < investorMap[_eventID][_investor].length; i++) {
             _totalContributed += investorMap[_eventID][_investor][i].amountContributed;
         }
-        return (_investor, _totalContributed, investorMap[_eventID][_investor][numInvestment].amountContributed, investorMap[_eventID][_investor][numInvestment].timeOfContribution);
+        return (_investor, _totalContributed, investorMap[_eventID][_investor][numInvestment - 1].amountContributed, investorMap[_eventID][_investor][numInvestment - 1].timeOfContribution);
     }
     
     /** Displays an investor's data for withdrawing tokens/refunding etehr */
     function investorReturnData (uint256 _eventID, uint256 numInvestor, uint256 numInvestment) public view returns  (address _investorKey, bool refunded, uint256 timeOfRefund, bool recieveToken, uint256 timeOfTokenWithdrawal) {
-        address _investor = eventMap[_eventID].storeKeys[numInvestor];
-        return (_investor, investorMap[_eventID][_investor][numInvestment].refunded, investorMap[_eventID][_investor][numInvestment].timeOfRefund, investorMap[_eventID][_investor][numInvestment].recieveToken, investorMap[_eventID][_investor][numInvestment].timeOfTokenWithdrawal);
+        address _investor = eventMap[_eventID].storeKeys[numInvestor - 1];
+        return (_investor, investorMap[_eventID][_investor][numInvestment - 1].refunded, investorMap[_eventID][_investor][numInvestment - 1].timeOfRefund, investorMap[_eventID][_investor][numInvestment - 1].recieveToken, investorMap[_eventID][_investor][numInvestment - 1].timeOfTokenWithdrawal);
     }
     
     Token token;
@@ -225,8 +228,9 @@ contract Crowdsale {
     function mintToken (uint256 _eventID) public {
          require(msg.sender == eventMap[_eventID].creator);
          require(eventMap[_eventID].distributeTokens);
+         require(eventMap[_eventID].mintTokens);
          token.mintTokens(eventMap[_eventID].amountRaised, _eventID, eventMap[_eventID].description);
-         eventMap[_eventID].distributeTokens = false;
+         eventMap[_eventID].mintTokens = false;
     }
     
     function tokenInfo () public view returns (uint256 _totalSupply, uint256 _eventID, string _eventDescription, address _eventContract) {

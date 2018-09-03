@@ -3,7 +3,7 @@ pragma solidity ^0.4.24;
 /** @title Token contract */
 contract Token {
     
-    /** @dev Property of all tokens */
+    /** @dev Properties of all tokens */
     string public constant name = "Token";
     string public constant symbol = "TOK";
     address eventContract;
